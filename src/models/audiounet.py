@@ -7,12 +7,10 @@ from model import Model, default_opt
 from layers.subpixel import SubPixel1D, SubPixel1D_v2
 
 from keras import backend as K
-from keras.layers import merge
-from keras.layers.core import Activation, Dropout
-from keras.layers.convolutional import Convolution1D
+from keras.layers.core import Activation
+from keras.layers import Conv1D, Dropout, Add, Concatenate
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import LeakyReLU
-from keras.initializations import normal, orthogonal
 
 # ----------------------------------------------------------------------------
 
@@ -34,12 +32,7 @@ class AudioUNet(Model):
     with tf.name_scope('generator'):
       x = X
       L = self.layers
-      # dim/layer: 4096, 2048, 1024, 512, 256, 128,  64,  32,
-      # n_filters = [  64,  128,  256, 384, 384, 384, 384, 384]
       n_filters = [  128,  256,  512, 512, 512, 512, 512, 512]
-      # n_filters = [  256,  512,  512, 512, 512, 1024, 1024, 1024]
-      # n_filtersizes = [129, 65,   33,  17,  9,  9,  9, 9]
-      # n_filtersizes = [31, 31,   31,  31,  31,  31,  31, 31]
       n_filtersizes = [65, 33, 17,  9,  9,  9,  9, 9, 9]
       downsampling_l = []
 
@@ -48,46 +41,37 @@ class AudioUNet(Model):
       # downsampling layers
       for l, nf, fs in zip(range(L), n_filters, n_filtersizes):
         with tf.name_scope('downsc_conv%d' % l):
-          x = (Convolution1D(nb_filter=nf, filter_length=fs, 
-                  activation=None, border_mode='same', init=orthogonal_init,
-                  subsample_length=2))(x)
-          # if l > 0: x = BatchNormalization(mode=2)(x)
+          conv1d = Conv1D(filters=nf, kernel_size=fs, padding='same', kernel_initializer='orthogonal', strides=2)
+          x = conv1d(x)
           x = LeakyReLU(0.2)(x)
           print 'D-Block: ', x.get_shape()
           downsampling_l.append(x)
 
       # bottleneck layer
       with tf.name_scope('bottleneck_conv'):
-          x = (Convolution1D(nb_filter=n_filters[-1], filter_length=n_filtersizes[-1], 
-                  activation=None, border_mode='same', init=orthogonal_init,
-                  subsample_length=2))(x)
-          x = Dropout(p=0.5)(x)
-          # x = BatchNormalization(mode=2)(x)
+          conv1d = Conv1D(filters=n_filters[-1], kernel_size=n_filtersizes[-1], padding='same', kernel_initializer='orthogonal', strides=2)
+          x = conv1d(x)
+          x = Dropout(rate=0.5)(x)
           x = LeakyReLU(0.2)(x)
 
       # upsampling layers
       for l, nf, fs, l_in in reversed(zip(range(L), n_filters, n_filtersizes, downsampling_l)):
         with tf.name_scope('upsc_conv%d' % l):
-          # (-1, n/2, 2f)
-          x = (Convolution1D(nb_filter=2*nf, filter_length=fs, 
-                  activation=None, border_mode='same', init=orthogonal_init))(x)
-          # x = BatchNormalization(mode=2)(x)
-          x = Dropout(p=0.5)(x)
+          conv1d = Conv1D(filters=2*nf, kernel_size=fs, padding='same', kernel_initializer='orthogonal')
+          x = (conv1d)(x)
+          x = Dropout(rate=0.5)(x)
           x = Activation('relu')(x)
-          # (-1, n, f)
-          x = SubPixel1D(x, r=2) 
-          # (-1, n, 2f)
-          x = merge([x, l_in], mode='concat', concat_axis=-1) 
+          x = SubPixel1D(x, r=2)
+          x = Concatenate()([x, l_in])
           print 'U-Block: ', x.get_shape()
 
       # final conv layer
       with tf.name_scope('lastconv'):
-        x = Convolution1D(nb_filter=2, filter_length=9, 
-                activation=None, border_mode='same', init=normal_init)(x)    
+        x = Conv1D(filters=2, kernel_size=9, padding='same', kernel_initializer='random_normal')(x)
         x = SubPixel1D(x, r=2) 
         print x.get_shape()
 
-      g = merge([x, X], mode='sum')
+      g = Add()([x, X])
 
     return g
 
@@ -101,12 +85,6 @@ class AudioUNet(Model):
 
 # ----------------------------------------------------------------------------
 # helpers
-
-def normal_init(shape, dim_ordering='tf', name=None): 
-  return normal(shape, scale=1e-3, name=name, dim_ordering=dim_ordering)
-
-def orthogonal_init(shape, dim_ordering='tf', name=None): 
-  return orthogonal(shape, name=name, dim_ordering=dim_ordering)  
 
 def spline_up(x_lr, r):
   x_lr = x_lr.flatten()

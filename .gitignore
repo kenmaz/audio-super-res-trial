@@ -6,4 +6,5 @@ data/vctk/speaker1/bk/**
 data/vctk/speaker1/*.wav
 data/vctk/speaker1/*.h5
 src/bk*
+src/singlespeaker*
 
