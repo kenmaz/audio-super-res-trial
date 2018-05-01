@@ -40,6 +40,8 @@ def upsample_wav(wav, args, model):
 
   # save the file
   outname = wav + '.' + args.out_label
+  print 'outname:'
+  print outname
   librosa.output.write_wav(outname + '.hr.wav', x_hr, fs)  
   librosa.output.write_wav(outname + '.lr.wav', x_lr, fs / args.r)  
   librosa.output.write_wav(outname + '.pr.wav', x_pr, fs)  

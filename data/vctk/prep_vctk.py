@@ -89,13 +89,11 @@ def add_data(h5_file, inputfiles, args, save_examples=False):
 
     # generate low-res version
     if args.low_pass:
-      # x_bp = butter_bandpass_filter(x, 0, args.sr / args.scale / 2, fs, order=6)
-      # x_lr = np.array(x[0::args.scale])
-      #x_lr = decimate(x, args.scale, zero_phase=True)
+      #@see https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.decimate.html
       x_lr = decimate(x, args.scale)
     else:
       x_lr = np.array(x[0::args.scale])
-    
+
     if args.interpolate:
       x_lr = upsample(x_lr, args.scale)
       assert len(x) % args.scale == 0
@@ -134,21 +132,24 @@ def add_data(h5_file, inputfiles, args, save_examples=False):
 
   # crop # of patches so that it's a multiple of mini-batch size
   num_patches = len(hr_patches)
-  print num_patches
+  print num_patches #23
   num_to_keep = int(np.floor(num_patches / args.batch_size) * args.batch_size)
   hr_patches = np.array(hr_patches[:num_to_keep])
   lr_patches = np.array(lr_patches[:num_to_keep])
 
   if save_examples:
-    librosa.output.write_wav('example-hr.wav', hr_patches[40][0], fs, norm=False)
-    librosa.output.write_wav('example-lr.wav', lr_patches[40][0], fs / args.scale, norm=False)
-    print hr_patches[40].shape
-    print lr_patches[40].shape
-    print hr_patches[40][0][:10]
-    print lr_patches[40][0][:10]
-    print 'two examples saved'
+    #librosa.output.write_wav('example-hr.wav', hr_patches[40][0], fs, norm=False)
+    #librosa.output.write_wav('example-lr.wav', lr_patches[40][0], fs / args.scale, norm=False)
+    print x.shape #(99748,)
+    print x_lr.shape #(99748,)
+    print fs #16000
+    print args.scale #4
+    librosa.output.write_wav('example-x.wav', x, fs, norm=False)
+    #librosa.output.write_wav('example-x_lr.wav', x_lr, fs / args.scale, norm=False)
+    librosa.output.write_wav('example-x_lr.wav', x_lr, fs, norm=False)
 
-  print hr_patches.shape
+  print hr_patches.shape #(23, 8192, 1)
+  return
 
   # create the hdf5 file
   data_set = h5_file.create_dataset('data', lr_patches.shape, np.float32)
@@ -174,4 +175,4 @@ def upsample(x_lr, r):
 if __name__ == '__main__':
   # create train
   with h5py.File(args.out, 'w') as f:
-    add_data(f, args.file_list, args, save_examples=False)
+    add_data(f, args.file_list, args, save_examples=True)
