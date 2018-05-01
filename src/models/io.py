@@ -23,6 +23,8 @@ def load_h5(h5_path):
 def upsample_wav(wav, args, model):
   # load signal
   x_hr, fs = librosa.load(wav, sr=args.sr)
+  print 'x_hr:', x_hr.shape
+  print 'fs:', fs
 
   # downscale signal
   # x_lr = np.array(x_hr[0::args.r])
@@ -31,8 +33,14 @@ def upsample_wav(wav, args, model):
   # x_lr = downsample_bt(x_hr, args.r)
 
   # upscale the low-res version
-  P = model.predict(x_lr.reshape((1,len(x_lr),1)))
+  x_input = x_lr.reshape((1,len(x_lr),1))
+  P = model.predict(x_input)
   x_pr = P.flatten()
+
+  print 'x_lr:', x_lr.shape
+  print 'x_input:', x_input.shape
+  print 'P:', P.shape
+  print 'x_pr:', x_pr.shape
 
   # crop so that it works with scaling ratio
   x_hr = x_hr[:len(x_pr)]
@@ -63,7 +71,7 @@ def get_spectrum(x, n_fft=2048):
   return S
 
 def save_spectrum(S, lim=800, outfile='spectrogram.png'):
-  plt.imshow(S.T, aspect=10)
+  plt.imshow(S.T, aspect='auto')
   # plt.xlim([0,lim])
   plt.tight_layout()
   plt.savefig(outfile)  
