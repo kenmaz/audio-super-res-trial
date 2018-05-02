@@ -1,5 +1,5 @@
-tensorflow
-keras
+tensorflow==1.7.0
+keras==2.1.6
 scipy==0.18.1
 librosa==0.4.3
 h5py==2.6.0
