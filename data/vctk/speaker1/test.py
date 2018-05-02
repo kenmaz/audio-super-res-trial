@@ -22,5 +22,5 @@ def wav():
     print len(x)
     print fs
 
-wav()
+h5()
 

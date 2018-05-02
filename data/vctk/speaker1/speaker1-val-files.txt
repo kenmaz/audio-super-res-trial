@@ -1,1 +1,1 @@
-../data/vctk/VCTK-Corpus/wav48/p225/p225_355.wav
+p225_355.wav
