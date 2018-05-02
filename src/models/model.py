@@ -47,13 +47,13 @@ class Model(object):
       self.predictions = self.create_model(n_dim, r)
       tf.add_to_collection('preds', self.predictions) 
 
-      # init the model
-      init = tf.global_variables_initializer()
-      self.sess.run(init)
-
       # create training updates
       self.train_op = self.create_train_op(X, Y, alpha)
       tf.add_to_collection('train_op', self.train_op)
+
+      # init the model
+      init = tf.global_variables_initializer()
+      self.sess.run(init)
 
     # logging
     lr_str = '.' + 'lr%f' % opt_params['lr']
@@ -172,9 +172,9 @@ class Model(object):
     g.clear_collection('losses')
 
     # create a new training op
-    self.train_op = self.create_train_op(X, Y, alpha)
-    g.clear_collection('train_op')
-    tf.add_to_collection('train_op', self.train_op)
+    #self.train_op = self.create_train_op(X, Y, alpha)
+    #g.clear_collection('train_op')
+    #tf.add_to_collection('train_op', self.train_op)
 
     # or, get existing train op:
     # self.train_op = tf.get_collection('train_op')
@@ -204,6 +204,7 @@ class Model(object):
     while train_data.epochs_completed < n_epoch:
               
       step += 1
+      print step
 
       # load the batch
       # alpha = min((n_epoch - train_data.epochs_completed) / 200, 1.)
@@ -266,15 +267,15 @@ class Model(object):
 
     # this is ugly, but only way I found to get this var after model reload
     g = tf.get_default_graph()
-    print('***********')
-    for n in g.as_graph_def().node:
-        print(n.name)
+    #print('***********')
+    #for n in g.as_graph_def().node:
+    #    print(n.name)
 
-    k_tensors = [n for n in g.as_graph_def().node if 'keras_learning_phase' in n.name]
-    assert len(k_tensors) <= 1
-    if k_tensors:
-      k_learning_phase = g.get_tensor_by_name(k_tensors[0].name + ':0')
-      feed_dict[k_learning_phase] = train
+    #k_tensors = [n for n in g.as_graph_def().node if 'keras_learning_phase' in n.name]
+    #assert len(k_tensors) <= 1
+    #if k_tensors:
+    #  k_learning_phase = g.get_tensor_by_name(k_tensors[0].name + ':0')
+    #  feed_dict[k_learning_phase] = train
 
     return feed_dict
 
