@@ -5,3 +5,4 @@ librosa==0.4.3
 h5py==2.6.0
 matplotlib==1.5.1
 pydot
+coremltools
