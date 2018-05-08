@@ -238,7 +238,7 @@ class Model(object):
         objectives_summary = tf.Summary()
         objectives_summary.value.add(tag='tr_l2_loss', simple_value=tr_l2_loss)
         objectives_summary.value.add(tag='tr_l2_snr', simple_value=tr_l2_snr)
-        objectives_summary.value.add(tag='va_l2_snr', simple_value=va_l2_loss)
+        objectives_summary.value.add(tag='va_l2_loss', simple_value=va_l2_loss)
         
         # compute summaries for all other metrics
         summary_str = self.sess.run(summary, feed_dict=feed_dict)
