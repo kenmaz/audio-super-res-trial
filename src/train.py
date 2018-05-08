@@ -1,19 +1,16 @@
 '''
 from keras.models import Sequential
 from keras.layers import Conv2D, Input, BatchNormalization
-from keras.callbacks import ModelCheckpoint, Callback, TensorBoard
 from keras.optimizers import SGD, Adam
-import math
-import pred
-import os
-import random
-from PIL import Image
 '''
 
 from os.path import isfile, join, exists
 from os import listdir, makedirs
+import os
 import numpy as np
 import h5py
+import math
+import random
 import tensorflow as tf
 from keras.utils import plot_model
 from keras.layers.core import Activation
@@ -21,6 +18,7 @@ from keras.layers import Input, Conv1D, Dropout, Add, Concatenate, UpSampling1D
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import LeakyReLU
 from keras.models import Model
+from keras.callbacks import ModelCheckpoint, Callback, TensorBoard
 
 # ----------------------------------------------------------------------------
 
@@ -79,55 +77,29 @@ def create_model():
 class MyDataGenerator(object):
 
     def flow_from_directory(self, h5_path, batch_size=32):
+        images, labels = load_h5(h5_path)
+        items = zip(images, labels)
         images = []
         labels = []
         while True:
-            files = listdir(input_dir)
-            random.shuffle(files)
-            for f in files:
-                images.append(self.load_image(input_dir, f))
-                labels.append(self.load_image(label_dir, f))
-                if len(images) == batch_size:
-                    x_inputs = np.asarray(images)
-                    x_labels = np.asarray(labels)
-                    images = []
-                    labels = []
-                    yield x_inputs, x_labels
-
-    def load_image(self, src_dir, f):
-        X = np.asarray(Image.open(join(src_dir, f)).convert('RGB'), dtype='float32')
-        X /= 255.
-        return X
+            random.shuffle(items)
+            for x, y in items:
+                yield x, y
 
 def load_h5(h5_path):
   with h5py.File(h5_path, 'r') as hf:
-    print 'List of arrays in input file:', h5_path, hf.keys()
     X = np.array(hf.get('data'))
     Y = np.array(hf.get('label'))
-    print 'Shape of X:', X.shape
+    print 'load_h5', X.shape, Y.shape
   return X, Y
 
 def train(log_dir, model_dir, train_h5, val_h5):
 
-    x_train, y_train = load_h5(train_h5)
-    x_val, y_val = load_h5(val_h5)
-    print(x_train.shape, y_train.shape)
-    print(x_val.shape, y_val.shape)
+    model = create_model()
+    plot_model(model, to_file='model.png', show_shapes=True)
 
-    resnet = create_model()
-    plot_model(resnet, to_file='model.png', show_shapes=True)
-    return
-
-    datagen = MyDataGenerator()
-    train_gen = datagen.flow_from_directory(os.path.join(
-        train_dir, 'input'),
-        os.path.join(train_dir, 'label'),
-        batch_size = 10)
-
-    val_gen = datagen.flow_from_directory(
-        os.path.join(test_dir, 'input'),
-        os.path.join(test_dir, 'label'),
-        batch_size = 10)
+    train_X, train_Y = load_h5(train_h5)
+    val_X, val_Y = load_h5(val_h5)
 
     class PredCallback(Callback):
         def on_epoch_end(self, epoch, logs=None):
@@ -149,15 +121,16 @@ def train(log_dir, model_dir, train_h5, val_h5):
     md_cb = ModelCheckpoint(os.path.join(model_dir,'check.h5'), monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='min', period=1)
     tb_cb = TensorBoard(log_dir=log_dir)
 
-    srcnn_model.fit_generator(
-        generator = train_gen,
-        steps_per_epoch = 10,
-        validation_data = val_gen,
-        validation_steps = 10,
-        epochs = 1,
-        callbacks=[pd_cb, ps_cb, md_cb, tb_cb])
+    model.fit(
+            train_X,
+            train_Y,
+            validation_data=(val_X, val_Y),
+            steps_per_epoch = 10,
+            validation_steps = 10,
+            epochs = 1,
+            callbacks=[pd_cb, ps_cb, md_cb, tb_cb])
 
-    srcnn_model.save(os.path.join(model_dir,'model.h5'))
+    model.save(os.path.join(model_dir,'model.h5'))
 
 if __name__ == "__main__":
     import argparse
