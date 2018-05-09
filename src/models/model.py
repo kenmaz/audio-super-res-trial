@@ -259,6 +259,8 @@ class Model(object):
   def load_batch(self, batch, alpha=1, train=True):
     X_in, Y_in, alpha_in = self.inputs
     X, Y = batch
+
+    'load_batch',X_in, Y_in, alpha_in,X,Y
     
     if Y is not None:
       feed_dict = {X_in : X, Y_in : Y, alpha_in : alpha}
@@ -308,4 +310,10 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         excerpt = indices[start_idx:start_idx + batchsize]
     else:
         excerpt = slice(start_idx, start_idx + batchsize)
-    yield inputs[excerpt], targets[excerpt]
+    gen_output(inputs, targets, excerpt)
+
+def gen_output(inputs, targets, excerpt):
+    x = inputs[excerpt]
+    y = targets[excerpt]
+    print 'gen_output:',x,y
+    yield x, y

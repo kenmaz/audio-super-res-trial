@@ -1,7 +1,7 @@
+'''
 from os.path import isfile, join, exists
 from os import listdir, makedirs
 import os
-import numpy as np
 import h5py
 import math
 import random
@@ -11,13 +11,22 @@ from keras.layers.core import Activation
 from keras.layers import Input, Conv1D, Dropout, Add, Concatenate, UpSampling1D
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import LeakyReLU
-from keras.models import Model
 from keras.callbacks import ModelCheckpoint, Callback, TensorBoard
+'''
 
+import numpy as np
+import argparse
+from keras.models import load_model
+from keras.backend import tensorflow_backend
+import tensorflow as tf
+from models.io import upsample_wav
+
+from keras.models import Model
+from keras.layers import Input
 # ----------------------------------------------------------------------------
 
 def create_model():
-    X = Input(shape=(None,1))
+    X = Input(shape=(8192,1))
 
     with tf.name_scope('generator'):
       x = X
@@ -126,17 +135,31 @@ def train(log_dir, model_dir, train_h5, val_h5):
 
     model.save(os.path.join(model_dir,'model.h5'))
 
+def load_model_dummy(path):
+    X = Input(shape=(8192,1))
+    model = Model(inputs=X, outputs=X)
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mean_squared_error'])
+    return model
+
+def setup_session():
+    config = tf.ConfigProto(gpu_options=tf.GPUOptions(allow_growth=True))
+    session = tf.Session(config=config)
+    tensorflow_backend.set_session(session)
+
+def pred(model_h5, wav_file, args):
+    setup_session()
+    model = load_model(model_h5)
+    upsample_wav(wav_file, args, model)
+    #res = model.predict(wav)
+    #print(res)
+
 if __name__ == "__main__":
-    import argparse
     parser = argparse.ArgumentParser()
-    parser.add_argument("log_dir")
-    parser.add_argument("model_dir")
-    parser.add_argument("train_h5")
-    parser.add_argument("val_h5")
+    parser.add_argument("model_h5")
+    parser.add_argument("wav_file")
+    parser.add_argument('--r', help='upscaling factor', type=int, default=4)
+    parser.add_argument('--sr', help='high-res sampling rate', type=int, default=16000)
     args = parser.parse_args()
     print(args)
 
-    if not exists(args.model_dir):
-        makedirs(args.model_dir)
-
-    train(args.log_dir, args.model_dir, args.train_h5, args.val_h5)
+    pred(args.model_h5, args.wav_file, args)
