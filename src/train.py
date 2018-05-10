@@ -17,7 +17,7 @@ from keras.callbacks import ModelCheckpoint, Callback, TensorBoard
 # ----------------------------------------------------------------------------
 
 def create_model():
-    X = Input(shape=(None,1))
+    X = Input(shape=(8192,1))
 
     with tf.name_scope('generator'):
       x = X
@@ -50,16 +50,14 @@ def create_model():
           x = Conv1D(filters=nf, kernel_size=fs, padding='same', kernel_initializer='orthogonal')(x)
           x = Dropout(rate=0.5)(x)
           x = Activation('relu')(x)
-          l_in = Conv1D(filters=nf, kernel_size=fs, padding='same', kernel_initializer='orthogonal', strides=2)(l_in)
-          #x = UpSampling1D(size=2)(x)
-          x = Concatenate(axis=1)([x, l_in])
+          x = UpSampling1D(size=2)(x)
+          x = Concatenate(axis=-1)([x, l_in])
           print 'U-Block-%d: %s' % (l, x.get_shape())
 
       # final conv layer
       with tf.name_scope('lastconv'):
         x = Conv1D(filters=1, kernel_size=9, padding='same', kernel_initializer='random_normal')(x)
         x = UpSampling1D(size=2)(x)
-        x = Activation('relu')(x)
         print 'Last-Block-1: %s' % x.get_shape()
 
       x = Add()([x, X])
