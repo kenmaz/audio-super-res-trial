@@ -31,7 +31,12 @@ from keras.layers import Input
 def upsample_wav(wav, args, model):
   # load signal
   x_hr, fs = librosa.load(wav, sr=args.sr)
-  x_hr = x_hr[0:8192]
+
+  num_layer = 5
+  in_size = (len(x_hr)/2**num_layer)*(2**num_layer)
+  print in_size
+  x_hr = x_hr[0:in_size]
+  print('original_wav',len(x_hr))
 
   # downscale signal
   x_lr = decimate(x_hr, args.r)

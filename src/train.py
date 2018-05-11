@@ -17,7 +17,7 @@ from keras.callbacks import ModelCheckpoint, Callback, TensorBoard
 # ----------------------------------------------------------------------------
 
 def create_model():
-    X = Input(shape=(8192,1))
+    X = Input(shape=(None,1))
 
     with tf.name_scope('generator'):
       x = X
