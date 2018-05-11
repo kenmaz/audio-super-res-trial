@@ -68,30 +68,40 @@ def create_model():
 
 class MyDataGenerator(object):
 
-    def flow_from_directory(self, h5_path, batch_size=32):
-        images, labels = load_h5(h5_path)
-        items = zip(images, labels)
-        images = []
-        labels = []
+    def create_generator(self, h5_path, batch_size=32):
         while True:
-            random.shuffle(items)
-            for x, y in items:
-                yield x, y
+            a, b = self.load_h5(h5_path)
+            xy = zip(a,b)
+            random.shuffle(xy)
+            x_list = []
+            y_list = []
 
-def load_h5(h5_path):
-  with h5py.File(h5_path, 'r') as hf:
-    X = np.array(hf.get('data'))
-    Y = np.array(hf.get('label'))
-    print 'load_h5', X.shape, Y.shape
-  return X, Y
+            for (x, y) in xy:
+                x_list.append(x.reshape(x.shape[1:]))
+                y_list.append(y.reshape(y.shape[1:]))
+                if len(x_list) == batch_size:
+                    yield np.asarray(x_list), np.asarray(y_list)
+                    x_list = []
+                    y_list = []
+
+            if len(x_list) > 0:
+                yield np.asarray(x_list), np.asarray(y_list)
+
+    def load_h5(self, h5_path):
+      with h5py.File(h5_path, 'r') as hf:
+        X = hf.get('data').value
+        Y = hf.get('label').value
+        print 'load_h5', X.shape, Y.shape
+      return np.vsplit(X, X.shape[0]), np.vsplit(Y, Y.shape[0])
 
 def train(log_dir, model_dir, train_h5, val_h5):
 
     model = create_model()
     plot_model(model, to_file='model.png', show_shapes=True)
 
-    train_X, train_Y = load_h5(train_h5)
-    val_X, val_Y = load_h5(val_h5)
+    gen = MyDataGenerator()
+    train_gen = gen.create_generator(train_h5)
+    val_gen = gen.create_generator(val_h5)
 
     class PredCallback(Callback):
         def on_epoch_end(self, epoch, logs=None):
@@ -113,14 +123,13 @@ def train(log_dir, model_dir, train_h5, val_h5):
     md_cb = ModelCheckpoint(os.path.join(model_dir,'check.h5'), monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='min', period=1)
     tb_cb = TensorBoard(log_dir=log_dir)
 
-    model.fit(
-            train_X,
-            train_Y,
-            validation_data=(val_X, val_Y),
-            steps_per_epoch = 10,
-            validation_steps = 10,
-            epochs = 1,
-            callbacks=[pd_cb, ps_cb, md_cb, tb_cb])
+    model.fit_generator(
+        generator = train_gen,
+        validation_data = val_gen,
+        steps_per_epoch = 10,
+        validation_steps = 10,
+        epochs = 10,
+        callbacks=[pd_cb, ps_cb, md_cb, tb_cb])
 
     model.save(os.path.join(model_dir,'model.h5'))
 
