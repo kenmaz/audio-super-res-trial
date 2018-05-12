@@ -116,7 +116,7 @@ def train(log_dir, model_dir, train_h5, val_h5):
         validation_data = val_gen,
         steps_per_epoch = 10,
         validation_steps = 10,
-        epochs = 10,
+        epochs = 3,
         callbacks=[md_cb, tb_cb])
 
     model.save(os.path.join(model_dir,'model.h5'))
@@ -124,11 +124,18 @@ def train(log_dir, model_dir, train_h5, val_h5):
 class MyTensorBoard(TensorBoard):
 
     def on_epoch_end(self, epoch, logs=None):
-        summary = tf.Summary()
-        summary_value = summary.value.add()
-        summary_value.simple_value = 10
-        summary_value.tag = 'snr'
-        self.writer.add_summary(summary, epoch)
+	for name, value in logs.items():
+		summary = tf.Summary()
+		summary_value = summary.value.add()
+		summary_value.simple_value = value
+		summary_value.tag = name
+		self.writer.add_summary(summary, epoch)
+
+	summary = tf.Summary()
+	summary_value = summary.value.add()
+	summary_value.simple_value = 10
+	summary_value.tag = 'snr'
+	self.writer.add_summary(summary, epoch)
 
 if __name__ == "__main__":
     import argparse
