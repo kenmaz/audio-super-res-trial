@@ -114,8 +114,8 @@ def train(log_dir, model_dir, train_h5, val_h5):
     model.fit_generator(
         generator = train_gen,
         validation_data = val_gen,
-        steps_per_epoch = 10,
-        validation_steps = 10,
+        steps_per_epoch = 1,
+        validation_steps = 1,
         epochs = 3,
         callbacks=[md_cb, tb_cb])
 
@@ -124,18 +124,13 @@ def train(log_dir, model_dir, train_h5, val_h5):
 class MyTensorBoard(TensorBoard):
 
     def on_epoch_end(self, epoch, logs=None):
-	for name, value in logs.items():
-		summary = tf.Summary()
-		summary_value = summary.value.add()
-		summary_value.simple_value = value
-		summary_value.tag = name
-		self.writer.add_summary(summary, epoch)
+        super(MyTensorBoard, self).on_epoch_end(epoch, logs)
 
-	summary = tf.Summary()
-	summary_value = summary.value.add()
-	summary_value.simple_value = 10
-	summary_value.tag = 'snr'
-	self.writer.add_summary(summary, epoch)
+        summary = tf.Summary()
+        summary_value = summary.value.add()
+        summary_value.simple_value = 10
+        summary_value.tag = 'snr'
+        self.writer.add_summary(summary, epoch)
 
 if __name__ == "__main__":
     import argparse
