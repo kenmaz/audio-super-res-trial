@@ -91,7 +91,6 @@ class MyDataGenerator(object):
       with h5py.File(h5_path, 'r') as hf:
         X = hf.get('data').value
         Y = hf.get('label').value
-        print 'load_h5', X.shape, Y.shape
       return np.vsplit(X, X.shape[0]), np.vsplit(Y, Y.shape[0])
 
 def train(log_dir, model_dir, train_h5, val_h5):
@@ -103,25 +102,14 @@ def train(log_dir, model_dir, train_h5, val_h5):
     train_gen = gen.create_generator(train_h5)
     val_gen = gen.create_generator(val_h5)
 
-    class PredCallback(Callback):
-        def on_epoch_end(self, epoch, logs=None):
-            pass
-            #pred.predict(self.model, eval_img, 'base-%d.png' % epoch, 'out-%d.png' % epoch, False)
-
-    class PSNRCallback(Callback):
-        def on_epoch_end(self, epoch, logs=None):
-            loss = logs['loss'] * 255.
-            val_loss = logs['val_loss'] * 255.
-            psnr = 20 * math.log10(255. / math.sqrt(loss))
-            val_psnr = 20 * math.log10(255. / math.sqrt(val_loss))
-            print("\n")
-            print("PSNR:%s" % psnr)
-            print("PSNR(val):%s" % val_psnr)
-
-    pd_cb = PredCallback()
-    ps_cb = PSNRCallback()
-    md_cb = ModelCheckpoint(os.path.join(model_dir,'check.h5'), monitor='val_loss', verbose=1, save_best_only=True, save_weights_only=False, mode='min', period=1)
-    tb_cb = TensorBoard(log_dir=log_dir)
+    md_cb = ModelCheckpoint(os.path.join(model_dir,'check.h5'),
+            monitor='val_loss',
+            verbose=1,
+            save_best_only=True,
+            save_weights_only=False,
+            mode='min',
+            period=1)
+    tb_cb = MyTensorBoard(log_dir=log_dir)
 
     model.fit_generator(
         generator = train_gen,
@@ -129,9 +117,18 @@ def train(log_dir, model_dir, train_h5, val_h5):
         steps_per_epoch = 10,
         validation_steps = 10,
         epochs = 10,
-        callbacks=[pd_cb, ps_cb, md_cb, tb_cb])
+        callbacks=[md_cb, tb_cb])
 
     model.save(os.path.join(model_dir,'model.h5'))
+
+class MyTensorBoard(TensorBoard):
+
+    def on_epoch_end(self, epoch, logs=None):
+        summary = tf.Summary()
+        summary_value = summary.value.add()
+        summary_value.simple_value = 10
+        summary_value.tag = 'snr'
+        self.writer.add_summary(summary, epoch)
 
 if __name__ == "__main__":
     import argparse
