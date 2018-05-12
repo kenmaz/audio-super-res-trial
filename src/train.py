@@ -68,7 +68,7 @@ def create_model():
 
 class MyDataGenerator(object):
 
-    def create_generator(self, h5_path, batch_size=32):
+    def create_generator(self, h5_path, batch_size):
         while True:
             a, b = self.load_h5(h5_path)
             xy = zip(a,b)
@@ -93,14 +93,14 @@ class MyDataGenerator(object):
         Y = hf.get('label').value
       return np.vsplit(X, X.shape[0]), np.vsplit(Y, Y.shape[0])
 
-def train(log_dir, model_dir, train_h5, val_h5):
+def train(log_dir, model_dir, train_h5, val_h5, args):
 
     model = create_model()
     plot_model(model, to_file='model.png', show_shapes=True)
 
     gen = MyDataGenerator()
-    train_gen = gen.create_generator(train_h5)
-    val_gen = gen.create_generator(val_h5)
+    train_gen = gen.create_generator(train_h5, args.batch_size)
+    val_gen = gen.create_generator(val_h5, args.batch_size)
 
     md_cb = ModelCheckpoint(os.path.join(model_dir,'check.h5'),
             monitor='val_loss',
@@ -114,9 +114,9 @@ def train(log_dir, model_dir, train_h5, val_h5):
     model.fit_generator(
         generator = train_gen,
         validation_data = val_gen,
-        steps_per_epoch = 1,
-        validation_steps = 1,
-        epochs = 3,
+        steps_per_epoch = args.steps,
+        validation_steps = args.steps,
+        epochs = args.epochs,
         callbacks=[md_cb, tb_cb])
 
     model.save(os.path.join(model_dir,'model.h5'))
@@ -139,10 +139,13 @@ if __name__ == "__main__":
     parser.add_argument("model_dir")
     parser.add_argument("train_h5")
     parser.add_argument("val_h5")
+    parser.add_argument('-e', '--epochs', type=int, default=120, help='number of epochs to train')
+    parser.add_argument('-s', '--steps', type=int, default=4, help='steps per epoch')
+    parser.add_argument('-b', '--batch_size', type=int, default=32, help='batch size')
     args = parser.parse_args()
     print(args)
 
     if not exists(args.model_dir):
         makedirs(args.model_dir)
 
-    train(args.log_dir, args.model_dir, args.train_h5, args.val_h5)
+    train(args.log_dir, args.model_dir, args.train_h5, args.val_h5, args)
