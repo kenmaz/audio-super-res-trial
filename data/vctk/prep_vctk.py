@@ -149,7 +149,6 @@ def add_data(h5_file, inputfiles, args, save_examples=False):
     librosa.output.write_wav('example-x_lr.wav', x_lr, fs, norm=False)
 
   print hr_patches.shape #(23, 8192, 1)
-  return
 
   # create the hdf5 file
   data_set = h5_file.create_dataset('data', lr_patches.shape, np.float32)
