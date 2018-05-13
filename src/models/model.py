@@ -310,10 +310,6 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         excerpt = indices[start_idx:start_idx + batchsize]
     else:
         excerpt = slice(start_idx, start_idx + batchsize)
-    gen_output(inputs, targets, excerpt)
-
-def gen_output(inputs, targets, excerpt):
     x = inputs[excerpt]
     y = targets[excerpt]
-    print 'gen_output:',x,y
     yield x, y
