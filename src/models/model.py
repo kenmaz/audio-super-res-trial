@@ -202,9 +202,7 @@ class Model(object):
     start_time = time.time()
     step, epoch = 0, train_data.epochs_completed
     while train_data.epochs_completed < n_epoch:
-              
       step += 1
-      print step
 
       # load the batch
       # alpha = min((n_epoch - train_data.epochs_completed) / 200, 1.)

@@ -7,8 +7,7 @@ import math
 import random
 import tensorflow as tf
 from keras.utils import plot_model
-from keras.layers.core import Activation
-from keras.layers import Input, Conv1D, Dropout, Add, Concatenate, UpSampling1D
+from keras.layers import Input, Conv1D, Dropout, Add, Concatenate, UpSampling1D, Activation, Reshape, Permute
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import LeakyReLU
 from keras.models import Model
@@ -51,6 +50,15 @@ def create_model():
           x = Conv1D(filters=nf, kernel_size=fs, padding='same', kernel_initializer='orthogonal')(x)
           x = Dropout(rate=0.5)(x)
           x = Activation('relu')(x)
+
+          #x=(7,1024,256)
+          x = Reshape((x.shape[0], x.shape[1], x.shape[2]/2, x.shape[2]/2))(x)
+          #x=(7,1024,128,128)
+          x = Permute((1,3,2,4))(x)
+          #x=(7,128,1024,128)
+          x = Peshape((x.shape[0], x.shape[1]*x.shape[2], x.shape[3]))(x)
+          #x=(7,1024*128,128)
+
           x = UpSampling1D(size=2)(x)
           x = Concatenate(axis=-1)([x, l_in])
           print 'U-Block-%d: %s' % (l, x.get_shape())
@@ -64,11 +72,13 @@ def create_model():
       x = Add()([x, X])
 
     model = Model(inputs=X, outputs=x)
-    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mean_squared_error'])
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=[mean_sqrt_l2_error])
     return model
 
 def mean_sqrt_l2_error(y_true, y_pred):
-    return K.mean(K.square((y_pred - y_true)**2), axis=-1)
+    res = K.mean(K.square((y_pred - y_true)**2), axis=-1)
+    print 'mean_sqrt_l2_error', res,  y_true, y_pred
+    return res
 
 def signal_noise_rate(y_true, y_pred):
     Y = y_true
