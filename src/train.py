@@ -13,6 +13,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import LeakyReLU
 from keras.models import Model
 from keras.callbacks import ModelCheckpoint, Callback, TensorBoard
+import keras.backend as K
 
 # ----------------------------------------------------------------------------
 
@@ -66,6 +67,19 @@ def create_model():
     model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mean_squared_error'])
     return model
 
+def mean_sqrt_l2_error(y_true, y_pred):
+    return K.mean(K.square((y_pred - y_true)**2), axis=-1)
+
+def signal_noise_rate(y_true, y_pred):
+    Y = y_true
+    P = y_pred
+    sqrt_l2_loss = tf.sqrt(tf.reduce_mean((P-Y)**2 + 1e-6, axis=[1,2]))
+    sqrn_l2_norm = tf.sqrt(tf.reduce_mean(Y**2, axis=[1,2]))
+    snr = 20 * tf.log(sqrn_l2_norm / sqrt_l2_loss + 1e-8) / tf.log(10.)
+    avg_sqrt_l2_loss = tf.reduce_mean(sqrt_l2_loss, axis=0)
+    avg_snr = tf.reduce_mean(snr, axis=0)
+    return avg_snr
+
 class MyDataGenerator(object):
 
     def create_generator(self, h5_path, batch_size):
@@ -111,13 +125,25 @@ def train(log_dir, model_dir, train_h5, val_h5, args):
             period=1)
     tb_cb = MyTensorBoard(log_dir=log_dir)
 
+    class PSNRCallback(Callback):
+        def on_epoch_end(self, epoch, logs=None):
+            loss = logs['loss'] * 255.
+            val_loss = logs['val_loss'] * 255.
+            psnr = 20 * math.log10(255. / math.sqrt(loss))
+            val_psnr = 20 * math.log10(255. / math.sqrt(val_loss))
+            print("\n")
+            print("PSNR:%s" % psnr)
+            print("PSNR(val):%s" % val_psnr)
+
+    ps_cb = PSNRCallback()
+
     model.fit_generator(
         generator = train_gen,
         validation_data = val_gen,
         steps_per_epoch = args.steps,
         validation_steps = args.steps,
         epochs = args.epochs,
-        callbacks=[md_cb, tb_cb])
+        callbacks=[md_cb, tb_cb, ps_cb])
 
     model.save(os.path.join(model_dir,'model.h5'))
 
@@ -125,12 +151,13 @@ class MyTensorBoard(TensorBoard):
 
     def on_epoch_end(self, epoch, logs=None):
         super(MyTensorBoard, self).on_epoch_end(epoch, logs)
-
+        '''
         summary = tf.Summary()
         summary_value = summary.value.add()
         summary_value.simple_value = 10
         summary_value.tag = 'snr'
         self.writer.add_summary(summary, epoch)
+        '''
 
 if __name__ == "__main__":
     import argparse
