@@ -50,7 +50,7 @@ def create_model():
           x = Conv1D(filters=nf*2, kernel_size=fs, padding='same', kernel_initializer='orthogonal')(x)
           x = Dropout(rate=0.5)(x)
           x = Activation('relu')(x)
-          s = (int(x.shape[1])*2, int(x.shape[2])/2)
+          s = (-1, int(x.shape[2])/2)
           x = Permute((2,1))(x)
           x = Reshape(s)(x)
           x = Concatenate(axis=-1)([x, l_in])
@@ -58,8 +58,10 @@ def create_model():
 
       # final conv layer
       with tf.name_scope('lastconv'):
-        x = Conv1D(filters=1, kernel_size=9, padding='same', kernel_initializer='random_normal')(x)
-        x = UpSampling1D(size=2)(x)
+        x = Conv1D(filters=2, kernel_size=9, padding='same', kernel_initializer='random_normal')(x)
+        s = (-1, int(x.shape[2])/2)
+        x = Permute((2,1))(x)
+        x = Reshape(s)(x)
         print 'Last-Block-1: %s' % x.get_shape()
 
       x = Add()([x, X])
