@@ -47,19 +47,12 @@ def create_model():
       # upsampling layers
       for l, nf, fs, l_in in reversed(zip(range(L), n_filters, n_filtersizes, downsampling_l)):
         with tf.name_scope('upsc_conv%d' % l):
-          x = Conv1D(filters=nf, kernel_size=fs, padding='same', kernel_initializer='orthogonal')(x)
+          x = Conv1D(filters=nf*2, kernel_size=fs, padding='same', kernel_initializer='orthogonal')(x)
           x = Dropout(rate=0.5)(x)
           x = Activation('relu')(x)
-
-          #x=(7,1024,256)
-          x = Reshape((x.shape[0], x.shape[1], x.shape[2]/2, x.shape[2]/2))(x)
-          #x=(7,1024,128,128)
-          x = Permute((1,3,2,4))(x)
-          #x=(7,128,1024,128)
-          x = Peshape((x.shape[0], x.shape[1]*x.shape[2], x.shape[3]))(x)
-          #x=(7,1024*128,128)
-
-          x = UpSampling1D(size=2)(x)
+          s = (int(x.shape[1])*2, int(x.shape[2])/2)
+          x = Permute((2,1))(x)
+          x = Reshape(s)(x)
           x = Concatenate(axis=-1)([x, l_in])
           print 'U-Block-%d: %s' % (l, x.get_shape())
 
