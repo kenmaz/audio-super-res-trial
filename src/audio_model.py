@@ -48,21 +48,17 @@ def create_model():
       # upsampling layers
       for l, nf, fs, l_in in reversed(zip(range(L), n_filters, n_filtersizes, downsampling_l)):
         with tf.name_scope('upsc_conv%d' % l):
-          x = Conv1D(filters=nf*2, kernel_size=fs, padding='same', kernel_initializer='orthogonal')(x)
+          x = Conv1D(filters=nf, kernel_size=fs, padding='same', kernel_initializer='orthogonal')(x)
           x = Dropout(rate=0.5)(x)
           x = Activation('relu')(x)
-          s = (-1, int(x.shape[2])/2)
-          x = Permute((2,1))(x)
-          x = Reshape(s)(x)
+          x = UpSampling1D(size=2)(x)
           x = Concatenate(axis=-1)([x, l_in])
           print 'U-Block-%d: %s' % (l, x.get_shape())
 
       # final conv layer
       with tf.name_scope('lastconv'):
-        x = Conv1D(filters=2, kernel_size=9, padding='same', kernel_initializer='random_normal')(x)
-        s = (-1, int(x.shape[2])/2)
-        x = Permute((2,1))(x)
-        x = Reshape(s)(x)
+        x = Conv1D(filters=1, kernel_size=9, padding='same', kernel_initializer='random_normal')(x)
+        x = UpSampling1D(size=2)(x)
         print 'Last-Block-1: %s' % x.get_shape()
 
       x = Add()([x, X])
