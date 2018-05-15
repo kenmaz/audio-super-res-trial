@@ -77,10 +77,15 @@ class AudioUNet(Model):
 
   def predict(self, X):
     assert len(X) == 1
+    print 1,X.shape
     x_sp = spline_up(X, self.r)
+    print 2,x_sp.shape
     x_sp = x_sp[:len(x_sp) - (len(x_sp) % (2**(self.layers+1)))]
+    print 3,x_sp.shape
     X = x_sp.reshape((1,len(x_sp),1))
+    print 4,x_sp.shape
     feed_dict = self.load_batch((X,X), train=False)
+    print 'predict', X.shape
     return self.sess.run(self.predictions, feed_dict=feed_dict)
 
 # ----------------------------------------------------------------------------

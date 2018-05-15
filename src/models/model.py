@@ -202,9 +202,7 @@ class Model(object):
     start_time = time.time()
     step, epoch = 0, train_data.epochs_completed
     while train_data.epochs_completed < n_epoch:
-              
       step += 1
-      print step
 
       # load the batch
       # alpha = min((n_epoch - train_data.epochs_completed) / 200, 1.)
@@ -296,4 +294,6 @@ def iterate_minibatches(inputs, targets, batchsize, shuffle=False):
         excerpt = indices[start_idx:start_idx + batchsize]
     else:
         excerpt = slice(start_idx, start_idx + batchsize)
-    yield inputs[excerpt], targets[excerpt]
+    x = inputs[excerpt]
+    y = targets[excerpt]
+    yield x, y

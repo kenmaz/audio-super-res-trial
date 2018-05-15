@@ -31,6 +31,7 @@ def upsample_wav(wav, args, model):
   # x_lr = downsample_bt(x_hr, args.r)
 
   # upscale the low-res version
+  print('upsample_wav',len(x_lr))
   P = model.predict(x_lr.reshape((1,len(x_lr),1)))
   x_pr = P.flatten()
 
