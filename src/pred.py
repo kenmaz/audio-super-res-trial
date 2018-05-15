@@ -26,8 +26,6 @@ from keras.backend import tensorflow_backend
 from keras.models import Model
 from keras.layers import Input
 
-# ----------------------------------------------------------------------------
-
 def upsample_wav(wav, args, model):
   # load signal
   x_hr, fs = librosa.load(wav, sr=args.sr)
