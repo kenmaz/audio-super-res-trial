@@ -67,7 +67,7 @@ def create_model():
       x = Add()([x, X])
 
     model = Model(inputs=X, outputs=x)
-    model.compile(optimizer='adam', loss='mean_squared_error', metrics=[mean_sqrt_l2_error])
+    model.compile(optimizer='adam', loss='mean_squared_error', metrics=['mean_squared_error'])
     return model
 
 def mean_sqrt_l2_error(y_true, y_pred):
