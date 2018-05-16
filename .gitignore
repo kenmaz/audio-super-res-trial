@@ -8,3 +8,5 @@ data/vctk/speaker1/*.h5
 src/log.*
 src/out*
 out*
+
+**/xcuserdata
