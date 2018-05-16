@@ -1,19 +1,3 @@
-'''
-from os.path import isfile, join, exists
-from os import listdir, makedirs
-import os
-import h5py
-import math
-import random
-import tensorflow as tf
-from keras.utils import plot_model
-from keras.layers.core import Activation
-from keras.layers import Input, Conv1D, Dropout, Add, Concatenate, UpSampling1D
-from keras.layers.normalization import BatchNormalization
-from keras.layers.advanced_activations import LeakyReLU
-from keras.callbacks import ModelCheckpoint, Callback, TensorBoard
-'''
-
 from matplotlib import pyplot as plt
 import librosa
 import numpy as np
