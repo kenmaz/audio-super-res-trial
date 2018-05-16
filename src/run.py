@@ -11,6 +11,7 @@ import numpy as np
 import models
 from models.model import default_opt
 from models.io import load_h5, upsample_wav
+import tensorflow as tf
 
 # ----------------------------------------------------------------------------
 
@@ -82,6 +83,16 @@ def train(args):
 
   # create model
   model = get_model(args, n_dim, r, from_ckpt=False, train=True)
+
+  total_parameters = 0
+  for variable in tf.trainable_variables():
+    shape = variable.get_shape()
+    print(variable.name, shape, len(shape))
+    variable_parameters = 1
+    for dim in shape:
+        variable_parameters *= dim.value
+    total_parameters += variable_parameters
+  print('total_parameters',total_parameters)
 
   # train model
   model.fit(X_train, Y_train, X_val, Y_val, n_epoch=args.epochs)
