@@ -83,6 +83,7 @@ def setup_session():
 def pred(model_h5, wav_file, args):
     setup_session()
     model = load_model(model_h5)
+    model.summary()
     upsample_wav(wav_file, args, model)
 
 if __name__ == "__main__":
