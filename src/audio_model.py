@@ -12,6 +12,7 @@ from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import LeakyReLU
 from keras.models import Model
 from keras.callbacks import ModelCheckpoint, Callback, TensorBoard
+from keras.optimizers import Adam
 import keras.backend as K
 from tensorflow.python import debug as tfdebug
 
@@ -64,7 +65,8 @@ def create_model():
       x = Add()([x, X])
 
     model = Model(inputs=X, outputs=x)
-    model.compile(optimizer='adam', loss=mean_sqrt_l2_error, metrics=[mean_sqrt_l2_error, signal_noise_rate])
+    adam = Adam(lr=3e-4, beta_1=0.9, beta_2=0.999)
+    model.compile(optimizer=adam, loss=mean_sqrt_l2_error, metrics=[mean_sqrt_l2_error, signal_noise_rate])
     return model
 
 def mean_sqrt_l2_error(y_true, y_pred):
