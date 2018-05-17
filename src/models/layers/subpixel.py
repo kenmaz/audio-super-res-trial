@@ -59,7 +59,7 @@ if __name__ == "__main__":
     Y = SubPixel1D(X, 2)
     y = sess.run(Y, feed_dict={X: x})
 
-    print 'single-channel:'
+    print 'single-channel:', x.shape, y.shape
     print 'original, element 0 (2 channels):', x[0,:,0], x[0,:,1]
     print 'rescaled, element 1:', y[0,:,0]
     print
