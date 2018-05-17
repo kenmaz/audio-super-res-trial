@@ -51,6 +51,7 @@ def train(log_dir, model_dir, train_h5, val_h5, args):
     K.set_session(sess)
 
     model = audio_model.create_model()
+    model.summary()
     plot_model(model, to_file='model.png', show_shapes=True)
 
     gen = MyDataGenerator()
