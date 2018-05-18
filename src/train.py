@@ -3,6 +3,7 @@ from os import listdir, makedirs
 import os
 import sys
 import datetime
+from datetime import timedelta, tzinfo
 import numpy as np
 import h5py
 import math
@@ -26,10 +27,20 @@ def load_h5(h5_path):
         Y = hf.get('label').value
         return X, Y
 
+class JST(tzinfo):
+    def utcoffset(self, dt):
+        return timedelta(hours=9)
+
+    def dst(self, dt):
+        return timedelta(0)
+
+    def tzname(self, dt):
+        return 'JST'
+
 class S3SyncCallback(Callback):
 
     def __init__(self, log_dir):
-        target = datetime.datetime.now().strftime('%Y%m%d_%H%M%S')
+        target = datetime.datetime.now(tz=JST()).strftime('%Y%m%d_%H%M%S')
         self.s3_path = 's3://tryswift/audio-super-resolution/%s' % target
         self.log_dir = log_dir
 
