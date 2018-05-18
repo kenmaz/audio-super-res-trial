@@ -68,11 +68,6 @@ def train(args):
   X_train, Y_train = load_h5(args.train)
   X_val, Y_val = load_h5(args.val)
 
-  X_train=X_train[0:1]
-  Y_train=Y_train[0:1]
-  X_val=X_val[0:1]
-  Y_val=Y_val[0:1]
-
   print(X_train.shape, Y_train.shape)
   print(X_val.shape, Y_val.shape)
 
