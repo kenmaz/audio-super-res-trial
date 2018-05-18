@@ -8,11 +8,16 @@ from layers.subpixel import SubPixel1D, SubPixel1D_v2
 
 from keras import backend as K
 from keras.layers.core import Activation
-from keras.layers import Conv1D, Dropout, Add, Concatenate
+from keras.layers import Conv1D, Dropout, Add, Concatenate, Reshape
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import LeakyReLU
 
 # ----------------------------------------------------------------------------
+
+def subpixel1D(x, r=2):
+  shape = (-1, int(x.shape[-1]/r))
+  y = Reshape(shape)(x)
+  return y
 
 class AudioUNet(Model):
   """Generic tensorflow model training code"""
@@ -61,14 +66,14 @@ class AudioUNet(Model):
           x = (conv1d)(x)
           x = Dropout(rate=0.5)(x)
           x = Activation('relu')(x)
-          x = SubPixel1D(x, r=2)
+          x = subpixel1D(x, r=2)
           x = Concatenate()([x, l_in])
           print 'U-Block: ', x.get_shape()
 
       # final conv layer
       with tf.name_scope('lastconv'):
         x = Conv1D(filters=2, kernel_size=9, padding='same', kernel_initializer='random_normal')(x)
-        x = SubPixel1D(x, r=2) 
+        x = subpixel1D(x, r=2)
         print x.get_shape()
 
       g = Add()([x, X])
