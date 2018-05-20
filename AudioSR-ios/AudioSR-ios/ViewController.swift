@@ -11,10 +11,9 @@ import CoreML
 
 class ViewController: UIViewController {
 
-    override func viewDidLoad() {
-        super.viewDidLoad()
+    @IBAction func buttonDidTouch(_ sender: Any) {
 
-        let lenght = 80
+        let lenght = 8192
         let wavData: [Float] = Array(repeating: 0, count: lenght)
         print(wavData.count)
         let ptr = UnsafeMutablePointer(mutating: wavData)
@@ -33,14 +32,8 @@ class ViewController: UIViewController {
         } catch {
             print(error)
         }
-
     }
-
-    override func didReceiveMemoryWarning() {
-        super.didReceiveMemoryWarning()
-        // Dispose of any resources that can be recreated.
-    }
-
+    
 
 }
 
