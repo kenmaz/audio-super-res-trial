@@ -1,71 +1,63 @@
-from os.path import isfile, join, exists
-from os import listdir, makedirs
-import os
+import sys
 import numpy as np
-import h5py
-import math
-import random
-import tensorflow as tf
-from keras.utils import plot_model
-from keras.layers import Input, Conv1D, Dropout, Add, Concatenate, UpSampling1D, Activation, Reshape, Permute
-from keras.layers.normalization import BatchNormalization
-from keras.layers.advanced_activations import LeakyReLU
+from keras.layers import Input, Dense, Conv1D, MaxPooling1D, Reshape
 from keras.models import Model
-from keras.callbacks import ModelCheckpoint, Callback, TensorBoard
-import keras.backend as K
-from tensorflow.python import debug as tfdebug
+from keras.models import load_model
+import coremltools
 
-# ----------------------------------------------------------------------------
+train_X = np.array([
+    [0,0,0],
+    [0,0,1],
+    [0,1,0],
+    [0,1,1],
+    [1,0,0],
+    [1,0,1],
+    [1,1,0],
+    [1,1,1],
+    ]).reshape(-1,3,1)
+train_Y = np.array([
+    [0,0,0],
+    [1,0,0],
+    [1,0,0],
+    [2,0,0],
+    [1,0,0],
+    [2,0,0],
+    [2,0,0],
+    [3,0,0],
+    ]).reshape(-1,3,1)
+print train_X.shape
 
-sess = tf.Session()
-sess = tfdebug.LocalCLIDebugWrapperSession(sess)
-K.set_session(sess)
+def train():
+    X = Input(shape=(None,1))
+    x = X
+    x = Conv1D(3,3,padding='same',activation='relu')(x)
+    x = Conv1D(1,3,padding='same',activation='relu')(x)
+    model = Model(inputs=X, outputs=x)
+    model.summary()
+    model.compile(optimizer='adam', loss='mean_squared_error')
+    model.fit(train_X, train_Y, epochs=1000)
+    model.save('model.h5', include_optimizer = False )
+    model.summary()
 
+def pred():
+    model = load_model('model.h5')
+    model.summary()
+    res = model.predict(train_X)
+    print train_Y
+    print "*******"
+    print res
 
-X = Input(shape=(6,4),name="my_input")
-'''
-(1,6,4)
-[[[ 0  1  2  3]
-  [ 4  5  6  7]
-  [ 8  9 10 11]
-  [12 13 14 15]
-  [16 17 18 19]
-  [20 21 22 23]]]
-'''
-x = X
-s = (-1, int(x.shape[2])/4)
-print s
-#(-1, 1)
+def convert():
+    coreml_model = coremltools.converters.keras.convert('model.h5', input_names = 'wav')
+    coreml_model.save('out/AudioSR.mlmodel')
 
-x = Permute((2,1), name='my_permute')(x)
-print x.shape
-#(?, 4, 6)
-#output:
-'''
-[[0,4,8,12,16,20]
-[1,5,9,13,17,21]
-[2,6,10,14,18,22]
-[3,7,11,15,19,23]]
-'''
+def coreml():
+    model = coremltools.models.MLModel('out/AudioSR.mlmodel')
+    val = np.array([[1.0,1.0,1.0]]).reshape(-1,3,1)
+    print val.shape
+    data = {'wav':val}
+    res = model.predict(data)
+    print res
 
-x = Reshape(s, name='my_reshape')(x)
-print x.shape
-#(?, 24, 1)
-'''
-
-'''
-
-model = Model(inputs=X, outputs=x)
-model.compile(optimizer='adam', loss='mean_squared_error')
-plot_model(model, to_file='model.png', show_shapes=True)
-
-train_x = np.arange(24).reshape((1,6,4))
-train_y = np.arange(24).reshape((1,24,1))
-print train_x
-print train_y
-
-model.fit(
-        train_x,
-        train_y,
-        batch_size=1)
+eval(sys.argv[1])()
 

@@ -13,13 +13,13 @@ class ViewController: UIViewController {
 
     @IBAction func buttonDidTouch(_ sender: Any) {
 
-        let lenght = 8192
-        let wavData: [Float] = Array(repeating: 0, count: lenght)
+        let lenght = 3
+        //let wavData: [Float] = Array(repeating: 0, count: lenght)
+        let wavData: [Float] = [0,0,1,]
         print(wavData.count)
         let ptr = UnsafeMutablePointer(mutating: wavData)
         do {
-            let len = NSNumber(integerLiteral: lenght)
-            let input = try MLMultiArray(dataPointer: ptr, shape: [1, len, 1], dataType: MLMultiArrayDataType.float32, strides: [1,1,1], deallocator: nil)
+            let input = try MLMultiArray(dataPointer: ptr, shape: [1, 3, 1], dataType: MLMultiArrayDataType.float32, strides: [1,1,1], deallocator: nil)
             print(input)
             
             do {
