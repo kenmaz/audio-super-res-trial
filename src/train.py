@@ -24,7 +24,12 @@ import audio_model
 def load_h5(h5_path):
     with h5py.File(h5_path, 'r') as hf:
         X = hf.get('data').value
+        xs = X.shape
+        X = X.reshape(xs[0],1,xs[1],xs[2])
+
         Y = hf.get('label').value
+        ys = Y.shape
+        Y = Y.reshape(ys[0],1,ys[1],ys[2])
         return X, Y
 
 class JST(tzinfo):

@@ -7,7 +7,7 @@ import math
 import random
 import tensorflow as tf
 from keras.utils import plot_model
-from keras.layers import Input, Conv1D, Dropout, Add, Concatenate, UpSampling1D, Activation, Reshape, Permute
+from keras.layers import Input, Conv1D, Conv2D, Dropout, Add, Concatenate, UpSampling1D, Activation, Reshape, Permute
 from keras.layers.normalization import BatchNormalization
 from keras.layers.advanced_activations import LeakyReLU
 from keras.models import Model
@@ -19,7 +19,7 @@ from tensorflow.python import debug as tfdebug
 # ----------------------------------------------------------------------------
 
 def create_model():
-    X = Input(shape=(None,1))
+    X = Input(shape=(1,None,1))
 
     with tf.name_scope('generator'):
       x = X
@@ -34,14 +34,14 @@ def create_model():
       # downsampling layers
       for l, nf, fs in zip(range(L), n_filters, n_filtersizes):
         with tf.name_scope('downsc_conv%d' % l):
-          x = Conv1D(filters=nf, kernel_size=fs, padding='same', kernel_initializer='orthogonal', strides=2)(x)
+          x = Conv2D(filters=nf, kernel_size=(1,fs), padding='same', kernel_initializer='orthogonal', strides=2)(x)
           x = LeakyReLU(0.2)(x)
           print 'D-Block-%d: %s' % (l, x.get_shape())
           downsampling_l.append(x)
 
       # bottleneck layer
       with tf.name_scope('bottleneck_conv'):
-          x = Conv1D(filters=n_filters[-1], kernel_size=n_filtersizes[-1], padding='same', kernel_initializer='orthogonal', strides=2)(x)
+          x = Conv2D(filters=n_filters[-1], kernel_size=(1,n_filtersizes[-1]), padding='same', kernel_initializer='orthogonal', strides=2)(x)
           x = Dropout(rate=0.5)(x)
           x = LeakyReLU(0.2)(x)
           print 'B-Block: ', x.get_shape()
@@ -49,7 +49,7 @@ def create_model():
       # upsampling layers
       for l, nf, fs, l_in in reversed(zip(range(L), n_filters, n_filtersizes, downsampling_l)):
         with tf.name_scope('upsc_conv%d' % l):
-          x = Conv1D(filters=nf*2, kernel_size=fs, padding='same', kernel_initializer='orthogonal')(x)
+          x = Conv2D(filters=nf*2, kernel_size=(1,fs), padding='same', kernel_initializer='orthogonal')(x)
           x = Dropout(rate=0.5)(x)
           x = Activation('relu')(x)
           x = subpixel1D(x, r=2)
@@ -57,18 +57,19 @@ def create_model():
           # CoreML not support 3d concatenate(axis=-1), so following error was happend.
           # >> raise ValueError('Only channel and sequence concatenation are supported.')
           # workaround: temporary reshape to 4-d, before concat back to 3-d
-          s = (1,-1,int(x.shape[-1]))
-          x = Reshape(s)(x)
-          l_in = Reshape(s)(l_in)
-          x = Concatenate(axis=-1)([x, l_in])
-          s = (-1,int(x.shape[-1]))
-          x = Reshape(s)(x)
+
+          #s = (1,-1,int(x.shape[-1]))
+          #x = Reshape(s)(x)
+          #l_in = Reshape(s)(l_in)
+          #x = Concatenate(axis=-1)([x, l_in])
+          #s = (-1,int(x.shape[-1]))
+          #x = Reshape(s)(x)
 
           print 'U-Block-%d: %s' % (l, x.get_shape())
 
       # final conv layer
       with tf.name_scope('lastconv'):
-        x = Conv1D(filters=2, kernel_size=9, padding='same', kernel_initializer='random_normal')(x)
+        x = Conv2D(filters=2, kernel_size=(1,9), padding='same', kernel_initializer='random_normal')(x)
         x = subpixel1D(x, r=2)
         print 'Last-Block-1: %s' % x.get_shape()
 
@@ -80,8 +81,10 @@ def create_model():
     return model
 
 def subpixel1D(x, r=2):
-    shape = (-1, int(x.shape[-1]/r))
+    print ('subpixel1D',x.shape)
+    shape = (1, -1, int(x.shape[-1]/r))
     y = Reshape(shape)(x)
+    print ('subpixel1D',y.shape)
     return y
 
 def mean_sqrt_l2_error(y_true, y_pred):
