@@ -19,10 +19,12 @@ from tensorflow.python import debug as tfdebug
 # ----------------------------------------------------------------------------
 
 def create_model():
-    X = Input(shape=(1,None,1))
+    X = Input(shape=(64,128,1))
 
     with tf.name_scope('generator'):
-      x = X
+      X2 = Reshape((1,-1,1))(X)
+
+      x = X2
       L = 4
       n_filters = [128, 256, 512, 512, 512, 512, 512, 512]
       n_filtersizes = [65, 33, 17,  9,  9,  9,  9, 9, 9]
@@ -73,7 +75,7 @@ def create_model():
         x = subpixel1D(x, r=2)
         print 'Last-Block-1: %s' % x.get_shape()
 
-      x = Add()([x, X])
+      x = Add()([x, X2])
 
     model = Model(inputs=X, outputs=x)
     adam = Adam(lr=3e-4, beta_1=0.9, beta_2=0.999)

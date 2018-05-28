@@ -27,9 +27,15 @@ def upsample_wav(wav, args, model):
   x_lr = upsample(x_lr, args.r)
   print('interpolate_wav',len(x_lr))
 
-  P = model.predict(x_lr.reshape((1,len(x_lr),1)))
+  x_lr = x_lr[0:8192]
+  x_lr = x_lr.reshape(1,64,128,1)
+  print('chunked reshaped input',len(x_lr))
+
+  P = model.predict(x_lr)
   x_pr = P.flatten()
   print('upsample_wav',len(x_pr))
+
+  x_lr = x_lr.reshape((8192,))
 
   # crop so that it works with scaling ratio
   x_hr = x_hr[:len(x_pr)]

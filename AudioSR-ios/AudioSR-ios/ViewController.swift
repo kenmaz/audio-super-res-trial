@@ -19,12 +19,19 @@ class ViewController: UIViewController {
         let ptr = UnsafeMutablePointer(mutating: wavData)
         do {
             let len = NSNumber(integerLiteral: lenght)
-            let input = try MLMultiArray(dataPointer: ptr, shape: [1, len, 1], dataType: MLMultiArrayDataType.float32, strides: [1,1,1], deallocator: nil)
+            let input = try MLMultiArray(dataPointer: ptr, shape: [1, 64, 128], dataType: MLMultiArrayDataType.float32, strides: [1,1,1], deallocator: nil)
             print(input)
             
             do {
                 let model = AudioSR()
+                
+                let start = Date()
+                
                 let output = try model.prediction(wav: input)
+                
+                let elapse = start.timeIntervalSinceNow
+                print(elapse)
+                
                 print(output.output1)
             } catch {
                 print(error)
