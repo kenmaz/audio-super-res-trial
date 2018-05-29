@@ -22,6 +22,21 @@ def create_model():
     X = Input(shape=(64,128,1))
 
     with tf.name_scope('generator'):
+      x = X
+      x = Reshape((1,-1,1))(x)
+      x = Conv2D(filters=128, kernel_size=(1,9), padding='same', kernel_initializer='glorot_uniform', activation='relu')(x)
+      x = Conv2D(filters=64, kernel_size=(1,3), padding='same', kernel_initializer='glorot_uniform', activation='relu')(x)
+      x = Conv2D(filters=1, kernel_size=(1,5), padding='same', kernel_initializer='glorot_uniform', activation='linear')(x)
+
+    model = Model(inputs=X, outputs=x)
+    adam = Adam(lr=3e-4, beta_1=0.9, beta_2=0.999)
+    model.compile(optimizer=adam, loss=mean_sqrt_l2_error, metrics=[mean_sqrt_l2_error, signal_noise_rate])
+    return model
+
+def _create_model():
+    X = Input(shape=(64,128,1))
+
+    with tf.name_scope('generator'):
       X2 = Reshape((1,-1,1))(X)
 
       x = X2
