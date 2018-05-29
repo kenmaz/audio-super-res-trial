@@ -60,12 +60,13 @@ def create_model():
           # >> raise ValueError('Only channel and sequence concatenation are supported.')
           # workaround: temporary reshape to 4-d, before concat back to 3-d
 
-          #s = (1,-1,int(x.shape[-1]))
-          #x = Reshape(s)(x)
-          #l_in = Reshape(s)(l_in)
-          #x = Concatenate(axis=-1)([x, l_in])
-          #s = (-1,int(x.shape[-1]))
-          #x = Reshape(s)(x)
+          #print 'concat', x.shape, l_in.shape
+          s = (1,-1,int(x.shape[-1]))
+          x = Reshape(s)(x)
+          l_in = Reshape(s)(l_in)
+          x = Concatenate(axis=-1)([x, l_in])
+          s = (1,-1,int(x.shape[-1]))
+          x = Reshape(s)(x)
 
           print 'U-Block-%d: %s' % (l, x.get_shape())
 
@@ -83,10 +84,8 @@ def create_model():
     return model
 
 def subpixel1D(x, r=2):
-    print ('subpixel1D',x.shape)
     shape = (1, -1, int(x.shape[-1]/r))
     y = Reshape(shape)(x)
-    print ('subpixel1D',y.shape)
     return y
 
 def mean_sqrt_l2_error(y_true, y_pred):
